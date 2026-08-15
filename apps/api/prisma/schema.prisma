@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Directory {
+  id        String   @id
+  name      String
+  parentId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   Directory?  @relation("DirectoryChildren", fields: [parentId], references: [id])
+  children Directory[] @relation("DirectoryChildren")
+  files    File[]
+
+  @@unique([parentId, name])
+}
+
+model File {
+  id          String   @id @default(cuid())
+  name        String
+  directoryId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  directory Directory     @relation(fields: [directoryId], references: [id])
+  versions  FileVersion[]
+
+  @@unique([directoryId, name])
+}
+
+model FileVersion {
+  id         String   @id @default(cuid())
+  fileId     String
+  version    Int
+  storageKey String   @unique
+  size       Int
+  mimeType   String
+  createdAt  DateTime @default(now())
+
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, version])
+}
